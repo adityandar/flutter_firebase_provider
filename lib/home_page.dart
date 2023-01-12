@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_firebase/providers/student_provider.dart';
+import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -90,57 +92,46 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Flutter x Firebase'),
-      ),
-      // Using StreamBuilder to display all products from Firestore in real-time
-      body: StreamBuilder(
-        stream: _students.snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-          if (streamSnapshot.hasData) {
+    return ChangeNotifierProvider<StudentProvider>(
+      create: (context) => StudentProvider(),
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Flutter x Firebase'),
+        ),
+        body: Consumer<StudentProvider>(
+          builder: (context, studentProvider, child) {
+            if (studentProvider.isLoading) {
+              return Center(
+                child: const CircularProgressIndicator(),
+              );
+            }
+            final students = studentProvider.students;
+
             return ListView.builder(
-              itemCount: streamSnapshot.data!.docs.length,
+              itemCount: students.length,
               itemBuilder: (context, index) {
-                final DocumentSnapshot documentSnapshot =
-                    streamSnapshot.data!.docs[index];
+                final student = students[index];
                 return Card(
                   margin: const EdgeInsets.all(10),
                   child: ListTile(
-                    title: Text(documentSnapshot['name']),
-                    subtitle: Text(documentSnapshot['major']),
+                    title: Text(student.name),
+                    subtitle: Text(student.major),
                     trailing: SizedBox(
                       width: 100,
                       child: Row(
-                        children: [
-                          // Press this button to edit a single product
-                          IconButton(
-                              icon: const Icon(Icons.edit),
-                              onPressed: () =>
-                                  _createOrUpdate(documentSnapshot)),
-                          // This icon button is used to delete a single product
-                          IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () =>
-                                  _deleteProduct(documentSnapshot.id)),
-                        ],
+                        children: [],
                       ),
                     ),
                   ),
                 );
               },
             );
-          }
-
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        },
-      ),
-      // Add new product
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _createOrUpdate(),
-        child: const Icon(Icons.add),
+          },
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _createOrUpdate(),
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
